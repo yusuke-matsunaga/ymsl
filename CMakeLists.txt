@@ -7,27 +7,10 @@ cmake_minimum_required (VERSION 3.2)
 # ===================================================================
 # プロジェクト名，バージョンの設定
 # ===================================================================
-project (YmTools)
-set (YMTOOLS_VERSION_MAJOR 1)
-set (YMTOOLS_VERSION_MINOR 0)
-set (YMTOOLS_VERSION "${YMTOOLS_VERSION_MAJOR}.${YMTOOLS_VERSION_MINOR}")
-
-# 名前空間
-set (YMTOOLS_NAMESPACE "nsYm")
-
-# リリースモード
-#set (CMAKE_BUILD_TYPE RELEASE)
-
-# デバッグモード
-#set (CMAKE_BUILD_TYPE DEBUG)
-
-
-# ===================================================================
-# オプション
-# ===================================================================
-
-# google-perftools を使う時にこのオプションを ON にする．
-option (OPT_GPERFTOOLS "use google-perftools" OFF)
+project (Ymsl)
+set (YMSL_VERSION_MAJOR 1)
+set (YMSL_VERSION_MINOR 0)
+set (YMSL_VERSION "${YMSL_VERSION_MAJOR}.${YMSL_VERSION_MINOR}")
 
 
 # ===================================================================
@@ -39,225 +22,218 @@ include (CTest)
 # ===================================================================
 # パッケージの検査
 # ===================================================================
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include (FindDoxygen)
 
 find_package(BISON REQUIRED)
 
-#include (FindPythonInterp)
-#include (FindPythonLibs)
-
-#include (FindQt4)
-#find_package(Qt4 4.8.0 REQUIRED QtCore QtGui QtXml)
-#include(${QT_USE_FILE})
-
-#set( CMAKE_INCLUDE_CURRENT_DIR ON )
-#find_package(Qt5Widgets)
-#find_package(OpenGL)
-
-find_package(TCL)
-
-if ( OPT_GPERFTOOLS )
-  find_package(Gperftools)
-endif (OPT_GPERFTOOLS)
-
 find_package (GTest)
 
-include (FindReadline)
-include (FindCurses)
-
-if ( UNIX )
-  set ( YM_UNIX 1 )
-endif ( UNIX )
-if ( APPLE )
-  set ( YM_APPLE 1 )
-endif ( APPLE )
-if ( WIN32 )
-  set ( YM_WIN32 1 )
-endif ( WIN32 )
+find_package (YmTools REQUIRED)
 
 
 # ===================================================================
-# ヘッダファイルの検査
+# インクルードパスの設定
 # ===================================================================
-include (CheckIncludeFileCXX)
-check_include_file_cxx (stdlib.h    HAVE_STDLIB_H)
-check_include_file_cxx (string.h    HAVE_STRING_H)
-check_include_file_cxx (strings.h   HAVE_STRINGS_H)
-check_include_file_cxx (unistd.h    HAVE_UNISTD_H)
-check_include_file_cxx (limits.h    HAVE_LIMITS_H)
-check_include_file_cxx (float.h     HAVE_FLOAT_H)
-check_include_file_cxx (math.h      HAVE_MATH_H)
-check_include_file_cxx (sys/time.h  HAVE_SYS_TIME_H)
-check_include_file_cxx (time.h      HAVE_TIME_H)
-check_include_file_cxx (sys/stat.h  HAVE_SYS_STAT_H)
-check_include_file_cxx (pwd.h       HAVE_PWD_H)
-check_include_file_cxx (sys/param.h HAVE_SYS_PARAM_H)
-
-
-# ===================================================================
-# ライブラリ関数の検査
-# ===================================================================
-include (CheckFunctionExists)
-check_function_exists (getrusage    HAVE_GETRUSAGE)
-check_function_exists (times        HAVE_TIMES)
-
-
-# ===================================================================
-# 組み込み型のサイズの検査
-# ===================================================================
-include (CheckTypeSize)
-check_type_size (short       SHORT_SIZE)
-check_type_size (int         INT_SIZE)
-check_type_size (long        LONG_SIZE)
-check_type_size ("long long" LLONG_SIZE)
-check_type_size ("void *"    VOIDP_SIZE)
-
-if ( SHORT_SIZE EQUAL 2 )
-  set( INT16_TYPE short )
-  set( UINT16_TYPE "unsigned short" )
-elseif ( INT_SIZE EQUAL 2 )
-  set( INT16_TYPE int )
-  set( UINT16_TYPE "unsigned int" )
-else ()
-  # エラー
-  message ( FATAL_ERROR
-    "No valid type for 16-bit integer" )
-endif ()
-
-if ( SHORT_SIZE EQUAL 4 )
-  set( INT32_TYPE short )
-  set( UINT32_TYPE "unsigned short" )
-elseif ( INT_SIZE EQUAL 4 )
-  set( INT32_TYPE int )
-  set( UINT32_TYPE "unsigned int" )
-elseif ( LONG_SIZE EQUAL 4 )
-  set( INT32_TYPE long )
-  set( UINT32_TYPE "unsigned long" )
-else ()
-  # エラー
-  message ( FATAL_ERROR
-    "No valid type for 32-bit integer" )
-endif ()
-
-if ( INT_SIZE EQUAL 8 )
-  set( INT64_TYPE int )
-  set( UINT64_TYPE "unsigned int" )
-elseif ( LONG_SIZE EQUAL 8 )
-  set( INT64_TYPE long )
-  set( UINT64_TYPE "unsigned long" )
-elseif ( LLONG_SIZE EQUAL 8 )
-  set( INT64_TYPE "lon long" )
-  set( UINT64_TYPE "unsigned long long" )
-else ()
-  # エラー
-  message ( FATAL_ERROR
-    "No valid type for 64-bit integer" )
-endif ()
-
-if ( INT_SIZE EQUAL VOIDP_SIZE )
-  set( PTRINT_TYPE int )
-elseif ( LONG_SIZE EQUAL VOIDP_SIZE )
-  set( PTRINT_TYPE long )
-elseif ( LLONG_SIZE EQUAL VOIDP_SIZE )
-  set( PTRINT_TYPE "long long" )
-else ()
-  # エラー
-  message ( FATAL_ERROR
-    "No valid type for pointer size integer" )
-endif ()
-
-
-# ===================================================================
-# サブディレクトリの設定
-# ===================================================================
-add_subdirectory (libym_utils)
-add_subdirectory (libym_algo)
-add_subdirectory (libym_logic)
-add_subdirectory (libym_cell)
-add_subdirectory (libym_verilog)
-add_subdirectory (libym_networks)
-
-if (TCL_FOUND)
-  add_subdirectory (libym_tclpp)
-endif (TCL_FOUND)
-
-
-# ===================================================================
-# YmTools.h の生成
-# ===================================================================
-
-configure_file(
-  "${PROJECT_SOURCE_DIR}/etc/YmTools.h.in"
-  "${PROJECT_BINARY_DIR}/YmTools.h"
+include_directories(
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_BINARY_DIR}
+  ${YmTools_INCLUDE_DIRS}
   )
 
 
 # ===================================================================
-# doxygen 起動用のコマンド
+#  ソースファイルの設定
 # ===================================================================
 
-if (DOXYGEN_FOUND)
-  configure_file (
-    "${PROJECT_SOURCE_DIR}/etc/Doxyfile.in"
-    "${PROJECT_BINARY_DIR}/Doxyfile"
-    )
+set (ymsl_SOURCES
+  src/parser/RsrvWordDic.cc
+  src/parser/YmslScanner.cc
 
-  add_custom_target(dox
-    "${DOXYGEN_EXECUTABLE}" ">" "${PROJECT_BINARY_DIR}/doxygen.log"
-    DEPENDS "${PROJECT_BINARY_DIR}/Doxyfile"
-    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-    COMMENT "generating doxygen documents"
-    )
-endif (DOXYGEN_FOUND)
+  ${CMAKE_CURRENT_BINARY_DIR}/grammer.cc
 
+  src/ast/Ast.cc
+  src/ast/AstMgr.cc
+  src/ast/AstPrinter.cc
+  src/ast/AstSymbol.cc
 
-# ===================================================================
-# パッケージコンフィグレーションファイルの生成
-# ===================================================================
+  src/ast/expr/AstArrayRef.cc
+  src/ast/expr/AstBinOp.cc
+  src/ast/expr/AstExpr.cc
+  src/ast/expr/AstFalse.cc
+  src/ast/expr/AstFloatConst.cc
+  src/ast/expr/AstFuncCall.cc
+  src/ast/expr/AstIntConst.cc
+  src/ast/expr/AstIteOp.cc
+  src/ast/expr/AstMemberRef.cc
+  src/ast/expr/AstOp.cc
+  src/ast/expr/AstStringConst.cc
+  src/ast/expr/AstSymbolExpr.cc
+  src/ast/expr/AstTrue.cc
+  src/ast/expr/AstUniOp.cc
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/etc/YmToolsConfig.cmake.in
-  ${PROJECT_BINARY_DIR}/YmToolsConfig.cmake
-  @ONLY
+  src/ast/stmt/AstAssignment.cc
+  src/ast/stmt/AstBlockStmt.cc
+  src/ast/stmt/AstBreak.cc
+  src/ast/stmt/AstCaseItem.cc
+  src/ast/stmt/AstConstDecl.cc
+  src/ast/stmt/AstContinue.cc
+  src/ast/stmt/AstDecr.cc
+  src/ast/stmt/AstDoWhile.cc
+  src/ast/stmt/AstEnumConst.cc
+  src/ast/stmt/AstEnumDecl.cc
+  src/ast/stmt/AstExprStmt.cc
+  src/ast/stmt/AstFor.cc
+  src/ast/stmt/AstFuncDecl.cc
+  src/ast/stmt/AstGoto.cc
+  src/ast/stmt/AstIf.cc
+  src/ast/stmt/AstImport.cc
+  src/ast/stmt/AstIncr.cc
+  src/ast/stmt/AstInplaceOp.cc
+  src/ast/stmt/AstLabel.cc
+  src/ast/stmt/AstNullStmt.cc
+  src/ast/stmt/AstParam.cc
+  src/ast/stmt/AstReturn.cc
+  src/ast/stmt/AstStatement.cc
+  src/ast/stmt/AstSwitch.cc
+  src/ast/stmt/AstToplevel.cc
+  src/ast/stmt/AstVarDecl.cc
+  src/ast/stmt/AstWhile.cc
+
+  src/ast/type/AstType.cc
+
+  src/compiler/YmslCompiler.cc
+  src/compiler/ArrayType.cc
+  src/compiler/EnumType.cc
+  src/compiler/FuncType.cc
+  src/compiler/MapType.cc
+  src/compiler/NamedType.cc
+  src/compiler/PrimType.cc
+  src/compiler/Scope.cc
+  src/compiler/SetType.cc
+  src/compiler/Type.cc
+  src/compiler/TypeMgr.cc
+
+  src/ir/IrCodeBlock.cc
+  src/ir/IrFuncBlock.cc
+  src/ir/IrToplevel.cc
+  src/ir/IrMgr.cc
+  src/ir/IrMgr_expr.cc
+  src/ir/IrMgr_handle.cc
+  src/ir/IrMgr_node.cc
+  src/ir/IrMgr_stmt.cc
+  src/ir/IrInterp.cc
+  src/ir/IrPrinter.cc
+
+  src/ir/handle/IrHandle.cc
+  src/ir/handle/IrBooleanConst.cc
+  src/ir/handle/IrIndexHandle.cc
+  src/ir/handle/IrIntConst.cc
+  src/ir/handle/IrFloatConst.cc
+  src/ir/handle/IrStringConst.cc
+  src/ir/handle/IrFuncHandle.cc
+  src/ir/handle/IrLabelHandle.cc
+  src/ir/handle/IrScopeHandle.cc
+  src/ir/handle/IrTypeHandle.cc
+  src/ir/handle/IrLocalVarHandle.cc
+  src/ir/handle/IrGlobalVarHandle.cc
+  src/ir/handle/IrArrayRef.cc
+  src/ir/handle/IrMemberRef.cc
+
+  src/ir/node/IrNode.cc
+  src/ir/node/IrLoad.cc
+  src/ir/node/IrStore.cc
+  src/ir/node/IrOp.cc
+  src/ir/node/IrUniOp.cc
+  src/ir/node/IrBinOp.cc
+  src/ir/node/IrTriOp.cc
+  src/ir/node/IrInplaceOp.cc
+  src/ir/node/IrInplaceUniOp.cc
+  src/ir/node/IrInplaceBinOp.cc
+  src/ir/node/IrFuncCall.cc
+  src/ir/node/IrReturn.cc
+  src/ir/node/IrJump.cc
+  src/ir/node/IrLabel.cc
+
+  src/vsm/Vsm.cc
+  src/vsm/VsmBuiltinFunc.cc
+  src/vsm/VsmCodeList.cc
+  src/vsm/VsmGen.cc
+  src/vsm/VsmFunction.cc
+  src/vsm/VsmNativeFunc.cc
+  src/vsm/VsmModule.cc
+  src/vsm/VsmNativeModule.cc
+  src/vsm/VsmVar.cc
+
+  src/builtin/YmslPrint.cc
   )
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/etc/YmToolsConfig-version.cmake.in
-  ${PROJECT_BINARY_DIR}/YmToolsConfig-version.cmake
-  @ONLY
+
+# Create target for the parser
+add_custom_target ( grammer ALL
+  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/grammer.hh"
+  "${CMAKE_CURRENT_BINARY_DIR}/grammer.cc"
   )
+
+# Create custom command for bison/yacc (note the DEPENDS)
+add_custom_command (
+  COMMAND "${BISON_EXECUTABLE}"
+  -y "${CMAKE_CURRENT_SOURCE_DIR}/src/parser/grammer.yy"
+  -o "${CMAKE_CURRENT_BINARY_DIR}/grammer.cc"
+  -d -v
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/grammer.cc"
+  "${CMAKE_CURRENT_BINARY_DIR}/grammer.hh"
+  "${CMAKE_CURRENT_BINARY_DIR}/grammer.output"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/parser/grammer.yy"
+  )
+
+# Since verilog_grammer.cc does not exists yet when cmake is run, mark
+# it as generated
+set_source_files_properties ( ${CMAKE_CURRENT_BINARY_DIR}/grammer.cc GENERATED )
 
 
 # ===================================================================
-# インストールターゲット
+#  ターゲットの設定
 # ===================================================================
 
-install (
-  FILES "${PROJECT_BINARY_DIR}/YmTools.h"
-  DESTINATION include
+add_library(ymsl
+  ${ymsl_SOURCES}
   )
 
-foreach ( _header "acc_user.h" "veriuser.h" "vpi_user.h" )
-  install (
-    FILES "${PROJECT_SOURCE_DIR}/include/${_header}"
-    DESTINATION include
-    )
-endforeach ()
-
-install (
-  EXPORT ymtools-targets
-  DESTINATION lib/ymtools-${YMTOOLS_VERSION}
+target_link_libraries(ymsl
+  ${Readline_LIBRARY}
+  ym_utils
   )
 
-install (FILES
-  ${PROJECT_BINARY_DIR}/YmToolsConfig.cmake
-  ${PROJECT_BINARY_DIR}/YmToolsConfig-version.cmake
-  DESTINATION lib/ymtools-${YMTOOLS_VERSION}
+add_executable(scanner_test
+  tests/scanner_test.cc
   )
 
+target_link_libraries(scanner_test
+  ymsl
+  )
 
-# ===================================================================
-# end-of-CMakeLists.txt
-# ===================================================================
+add_executable(parser_test
+  tests/parser_test.cc
+  )
+
+target_link_libraries(parser_test
+  ymsl
+  )
+
+add_executable(TypeMgr_test
+  tests/TypeMgr_test.cc
+  )
+
+target_link_libraries(TypeMgr_test
+  ymsl
+  )
+
+add_executable(IrMgr_test
+  tests/IrMgr_test.cc
+  )
+
+target_link_libraries(IrMgr_test
+  ymsl
+  )
